@@ -319,18 +319,12 @@ body {
   .input-card { padding: 32px 24px; }
 
   .cert-wrap {
-    width: calc(100vw - 24px);
-    height: calc(100vw - 24px);
+    position: relative;
     max-width: 600px;
     max-height: 600px;
-    overflow: hidden;
   }
   .cert {
-    transform: scale(calc((100vw - 24px) / 600));
     transform-origin: top left;
-  }
-  .cert.capturing {
-    transform: none;
   }
 }
 </style>
@@ -459,14 +453,15 @@ function downloadCert() {
   btn.textContent = '저장 중...';
   btn.disabled = true;
 
+  const savedTransform = cert.style.transform;
   const restore = () => {
-    cert.classList.remove('capturing');
+    cert.style.transform = savedTransform;
     btn.textContent = '이미지 저장 (1:1)';
     btn.disabled = false;
   };
 
-  // 모바일 축소(transform) 일시 해제 → 선명한 캡처
-  cert.classList.add('capturing');
+  // 캡처 전 transform 해제 → 600×600 원본 크기로 선명하게 캡처
+  cert.style.transform = '';
 
   // 이미지 디코딩 + 폰트 전부 완료 후 캡처
   const imgDecodes = Array.from(cert.querySelectorAll('img')).map(img =>
@@ -497,6 +492,25 @@ function downloadCert() {
 document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') generateCert();
 });
+
+function scaleCert() {
+  const wrap = document.querySelector('.cert-wrap');
+  const cert = document.getElementById('certEl');
+  if (!wrap || !cert) return;
+  if (window.innerWidth <= 660) {
+    const size = Math.min(window.innerWidth - 32, 600);
+    const scale = size / 600;
+    wrap.style.width  = size + 'px';
+    wrap.style.height = size + 'px';
+    cert.style.transform = `scale(${scale})`;
+  } else {
+    wrap.style.width = '';
+    wrap.style.height = '';
+    cert.style.transform = '';
+  }
+}
+scaleCert();
+window.addEventListener('resize', scaleCert);
 </script>
 </body>
 </html>
