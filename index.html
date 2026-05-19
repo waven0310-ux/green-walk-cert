@@ -573,7 +573,7 @@ const EVENT = {
 
 const STAMPS = {
   tokens: { 1: 'Gw26cP1xK9m', 2: 'Gw26cP2nR4j', 3: 'Gw26cP3bT7p' },
-  get()      { return JSON.parse(localStorage.getItem('greenWalkStamps') || '[]'); },
+  get()      { try { return JSON.parse(localStorage.getItem('greenWalkStamps') || '[]'); } catch(e) { return []; } },
   save(arr)  { localStorage.setItem('greenWalkStamps', JSON.stringify(arr)); },
   clear()    { localStorage.removeItem('greenWalkStamps'); },
   has(n)     { return this.get().includes(n); },
@@ -759,7 +759,7 @@ function processQRParam() {
   if (STAMPS.tokens[cp] !== token) return null;
 
   const collected = STAMPS.get();
-  if (collected.includes(cp)) return cp;
+  if (collected.includes(cp)) return 'already-collected';
 
   if (cp > 1 && !collected.includes(cp - 1)) return 'wrong-order';
 
