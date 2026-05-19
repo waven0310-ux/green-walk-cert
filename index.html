@@ -359,92 +359,62 @@ body {
 .stamp-card {
   background: white;
   box-shadow: 0 16px 48px rgba(0,0,0,0.12);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  width: 100%;
   overflow: hidden;
+}
+.stamp-bg-wrap {
   position: relative;
   width: 100%;
 }
-.stamp-logos {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.stamp-bg-img {
   width: 100%;
-  padding: 18px 20px 0;
-}
-.stamp-logo-l {
-  height: 46px;
-  object-fit: contain;
-}
-.stamp-logo-r {
-  height: 30px;
-  object-fit: contain;
-}
-.stamp-title-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 20px 4px;
-}
-.stamp-year {
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--ink);
-  letter-spacing: 2px;
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-}
-.stamp-title-img {
-  height: 56px;
-  object-fit: contain;
-}
-.stamp-subtitle {
-  font-size: 13px;
-  color: var(--ink);
-  letter-spacing: -0.3px;
-}
-.stamp-progress {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--green);
-  margin: 6px 0 2px;
+  display: block;
 }
 .stamp-circles {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  margin: 8px 0 4px;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
 }
 .stamp-circle {
-  width: 110px;
-  height: 110px;
+  position: absolute;
+  width: 18%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: #C8E8D4;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
   transition: transform 0.2s ease;
 }
-.stamp-circle.stamped {
-  background: #C8E8D4;
-}
+#stamp-1 { top: 62%; left: 22%; }
+#stamp-2 { top: 62%; left: 50%; }
+#stamp-3 { top: 62%; left: 78%; }
 .stamp-circle.stamped img {
-  width: 90px;
-  height: 90px;
+  width: 95%;
+  height: 95%;
   object-fit: contain;
 }
 .stamp-circle.pop {
   animation: stampPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 @keyframes stampPop {
-  from { transform: scale(0.4); opacity: 0.5; }
-  to   { transform: scale(1);   opacity: 1; }
+  from { transform: translate(-50%, -50%) scale(0.4); opacity: 0.5; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
-.stamp-num {
-  font-size: 32px;
+.stamp-num { display: none; }
+.stamp-info-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px 24px;
+}
+.stamp-progress {
+  font-size: 14px;
   font-weight: 700;
-  color: #7ab890;
+  color: var(--green);
 }
 .stamp-hint {
   font-size: 13px;
@@ -466,7 +436,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   border-radius: 4px;
-  margin: 4px 0 20px;
+  margin-top: 4px;
   opacity: 0.3;
   pointer-events: none;
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
@@ -479,76 +449,26 @@ body {
 .btn-get-cert.active:hover {
   background: var(--green);
 }
-.stamp-bottom {
-  position: relative;
-  width: 100%;
-  height: 140px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.stamp-grass {
-  position: absolute;
-  bottom: 0;
-  left: -20%;
-  right: -20%;
-  height: 90px;
-  background: var(--green);
-  border-radius: 50% 50% 0 0;
-}
-.stamp-char-l {
-  position: absolute;
-  bottom: 42px;
-  left: 16px;
-  height: 96px;
-  object-fit: contain;
-}
-.stamp-char-r {
-  position: absolute;
-  bottom: 42px;
-  right: 16px;
-  height: 88px;
-  object-fit: contain;
-}
-@media (max-width: 480px) {
-  .stamp-circle { width: 82px; height: 82px; }
-  .stamp-circle.stamped img { width: 66px; height: 66px; }
-  .stamp-num { font-size: 26px; }
-  .stamp-title-img { height: 44px; }
-  .stamp-circles { gap: 12px; }
-  .stamp-bottom { height: 116px; }
-  .stamp-grass { height: 72px; }
-  .stamp-char-l { height: 78px; bottom: 32px; }
-  .stamp-char-r { height: 70px; bottom: 32px; }
-}
 </style>
 </head>
 <body>
 
 <!-- 스탬프 화면 -->
-<div id="screen-stamp" style="display:none; width:100%; max-width:500px;">
+<div id="screen-stamp" style="display:none; width:100%; max-width:600px;">
   <div class="stamp-card">
-    <div class="stamp-logos">
-      <img src="assets/기후에너지 환경부 금강유역환경청.png" class="stamp-logo-l" alt="">
-      <img src="assets/대전 MBC.png" class="stamp-logo-r" alt="">
+    <div class="stamp-bg-wrap">
+      <img src="assets/스탬프지.jpg" class="stamp-bg-img" alt="">
+      <div class="stamp-circles" id="stampCircles">
+        <div class="stamp-circle" id="stamp-1"><span class="stamp-num">1</span></div>
+        <div class="stamp-circle" id="stamp-2"><span class="stamp-num">2</span></div>
+        <div class="stamp-circle" id="stamp-3"><span class="stamp-num">3</span></div>
+      </div>
     </div>
-    <div class="stamp-title-area">
-      <div class="stamp-year">2026</div>
-      <img src="assets/초록 발자국 남기기 글자@4x.png" class="stamp-title-img" alt="초록 발자국 남기기">
-      <div class="stamp-subtitle">환경의 날 기념 <strong>패밀리 그린워크</strong></div>
-    </div>
-    <div class="stamp-progress" id="stampProgress">0 / 3 스탬프 수집</div>
-    <div class="stamp-circles" id="stampCircles">
-      <div class="stamp-circle" id="stamp-1"><span class="stamp-num">1</span></div>
-      <div class="stamp-circle" id="stamp-2"><span class="stamp-num">2</span></div>
-      <div class="stamp-circle" id="stamp-3"><span class="stamp-num">3</span></div>
-    </div>
-    <div class="stamp-hint" id="stampHint">체크포인트 1 QR을 찍어주세요</div>
-    <div class="stamp-message" id="stampMessage"></div>
-    <button class="btn-get-cert" id="btnGetCert" onclick="goToNameInput()">완주 인증서 받기</button>
-    <div class="stamp-bottom">
-      <div class="stamp-grass"></div>
-      <img src="assets/캐릭터 1.png" class="stamp-char-l" alt="">
-      <img src="assets/캐릭터2.png" class="stamp-char-r" alt="">
+    <div class="stamp-info-bar">
+      <div class="stamp-progress" id="stampProgress">0 / 3 스탬프 수집</div>
+      <div class="stamp-hint" id="stampHint">체크포인트 1 QR을 찍어주세요</div>
+      <div class="stamp-message" id="stampMessage"></div>
+      <button class="btn-get-cert" id="btnGetCert" onclick="goToNameInput()">완주 인증서 받기</button>
     </div>
   </div>
 </div>
