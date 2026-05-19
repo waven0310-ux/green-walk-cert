@@ -312,6 +312,30 @@ body {
   flex-shrink: 0;
 }
 
+/* ── 애니메이션 ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes certReveal {
+  from { opacity: 0; transform: translateY(44px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+.input-card {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+}
+.btn-generate:active { animation: pulse 0.2s ease; }
+.cert-wrap {
+  animation: none;
+}
+.cert-wrap.show {
+  animation: certReveal 0.55s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
 /* ── 모바일 반응형 (QR 스캔 = 휴대폰) ── */
 @media (max-width: 660px) {
   body { padding: 16px 8px; }
@@ -436,10 +460,46 @@ function generateCert() {
     return;
   }
   currentName = raw;
-  document.getElementById('certName').textContent = raw.split('').join(' ');
+  document.getElementById('certName').textContent = '';
   document.getElementById('screen-input').style.display = 'none';
-  document.getElementById('screen-cert').style.display = 'flex';
+  const certScreen = document.getElementById('screen-cert');
+  certScreen.style.display = 'flex';
   window.scrollTo(0, 0);
+
+  // 인증서 등장 애니메이션
+  const wrap = document.querySelector('.cert-wrap');
+  wrap.classList.remove('show');
+  void wrap.offsetWidth;
+  wrap.classList.add('show');
+
+  // 내부 요소 stagger fade-in
+  const items = Array.from(document.querySelector('.cert-right').children)
+    .filter(el => !el.classList.contains('sr-only'));
+  items.forEach(el => {
+    el.style.opacity = '0';
+    el.style.animation = 'none';
+  });
+  requestAnimationFrame(() => {
+    items.forEach((el, i) => {
+      el.style.animation = `fadeSlideUp 0.4s ease both`;
+      el.style.animationDelay = `${0.25 + i * 0.07}s`;
+    });
+  });
+
+  // 이름 타이핑 효과
+  const nameEl = document.getElementById('certName');
+  const spaced = raw.split('').join(' ');
+  let idx = 0;
+  const type = () => {
+    if (idx <= spaced.length) {
+      nameEl.textContent = spaced.slice(0, idx++);
+      setTimeout(type, 60);
+    }
+  };
+  setTimeout(type, 400);
+
+  // 🎉 confetti
+  setTimeout(launchConfetti, 300);
 }
 
 function goBack() {
@@ -481,7 +541,9 @@ function downloadCert() {
     a.download = `완주인증서_${currentName || '완주자'}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    restore();
+    btn.textContent = '✓ 저장 완료!';
+    btn.style.background = '#00883A';
+    setTimeout(restore, 2000);
   }).catch(err => {
     console.error('인증서 저장 실패:', err);
     alert('이미지 저장에 실패했습니다. 다시 시도해 주세요.');
@@ -492,6 +554,45 @@ function downloadCert() {
 document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') generateCert();
 });
+
+function launchConfetti() {
+  const wrap = document.querySelector('.cert-wrap');
+  const canvas = document.createElement('canvas');
+  canvas.width = 600; canvas.height = 600;
+  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;';
+  wrap.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#00883A','#2D9E5A','#ffffff','#A8E6BF','#FFD700','#FF8C69','#87CEEB'];
+  const particles = Array.from({length: 90}, (_, i) => ({
+    x: Math.random() * 600,
+    y: -10 - Math.random() * 100,
+    vx: (Math.random() - 0.5) * 4,
+    vy: Math.random() * 3 + 2,
+    color: colors[i % colors.length],
+    w: Math.random() * 10 + 5,
+    h: Math.random() * 6 + 3,
+    rot: Math.random() * 360,
+    vr: (Math.random() - 0.5) * 6,
+    alpha: 1
+  }));
+  let frame = 0;
+  (function draw() {
+    ctx.clearRect(0, 0, 600, 600);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (frame > 50) p.alpha = Math.max(0, p.alpha - 0.018);
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    if (++frame < 110) requestAnimationFrame(draw);
+    else canvas.remove();
+  })();
+}
 
 function scaleCert() {
   const wrap = document.querySelector('.cert-wrap');
