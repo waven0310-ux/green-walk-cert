@@ -355,9 +355,133 @@ body {
     transform-origin: top left;
   }
 }
+/* ── 스탬프 화면 ── */
+.stamp-card {
+  background: white;
+  padding: 40px 36px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.stamp-event-tag {
+  display: inline-block;
+  background: var(--green);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 16px;
+  letter-spacing: 0.5px;
+}
+.stamp-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--green-dark);
+  letter-spacing: -0.5px;
+}
+.stamp-progress {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+}
+.stamp-circles {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin: 8px 0;
+}
+.stamp-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--green-light);
+  border: 2px dashed #7ab890;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+.stamp-circle.stamped {
+  background: var(--green);
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,136,58,0.4);
+}
+.stamp-circle.stamped img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+.stamp-circle.pop {
+  animation: stampPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes stampPop {
+  from { transform: scale(0.4); opacity: 0.5; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.stamp-num {
+  font-size: 26px;
+  font-weight: 700;
+  color: #7ab890;
+}
+.stamp-hint {
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+}
+.stamp-message {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+  min-height: 20px;
+}
+.btn-get-cert {
+  background: var(--green-dark);
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 8px;
+  opacity: 0.3;
+  pointer-events: none;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  transition: opacity 0.3s, background 0.2s;
+}
+.btn-get-cert.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.btn-get-cert.active:hover {
+  background: var(--green);
+}
+@media (max-width: 660px) {
+  .stamp-card { padding: 32px 20px; }
+  .stamp-circle { width: 76px; height: 76px; }
+  .stamp-circle.stamped img { width: 60px; height: 60px; }
+}
 </style>
 </head>
 <body>
+
+<!-- 스탬프 화면 -->
+<div id="screen-stamp" style="display:none; width:100%; max-width:500px; text-align:center;">
+  <div class="stamp-card">
+    <div class="stamp-event-tag">2026 · 환경의 날 기념 패밀리 그린워크</div>
+    <div class="stamp-title">초록 발자국 남기기</div>
+    <div class="stamp-progress" id="stampProgress">0 / 3 스탬프 수집</div>
+    <div class="stamp-circles" id="stampCircles">
+      <div class="stamp-circle" id="stamp-1"><span class="stamp-num">1</span></div>
+      <div class="stamp-circle" id="stamp-2"><span class="stamp-num">2</span></div>
+      <div class="stamp-circle" id="stamp-3"><span class="stamp-num">3</span></div>
+    </div>
+    <div class="stamp-hint" id="stampHint">체크포인트 1 QR을 찍어주세요</div>
+    <div class="stamp-message" id="stampMessage"></div>
+    <button class="btn-get-cert" id="btnGetCert" onclick="goToNameInput()">완주 인증서 받기</button>
+  </div>
+</div>
 
 <!-- 입력 화면 -->
 <div id="screen-input">
@@ -447,6 +571,16 @@ const EVENT = {
   maxNameLen: 8
 };
 
+const STAMPS = {
+  tokens: { 1: 'Gw26cP1xK9m', 2: 'Gw26cP2nR4j', 3: 'Gw26cP3bT7p' },
+  get()      { return JSON.parse(localStorage.getItem('greenWalkStamps') || '[]'); },
+  save(arr)  { localStorage.setItem('greenWalkStamps', JSON.stringify(arr)); },
+  clear()    { localStorage.removeItem('greenWalkStamps'); },
+  has(n)     { return this.get().includes(n); },
+  add(n)     { const s = this.get(); if (!s.includes(n)) { s.push(n); this.save(s); } },
+  count()    { return this.get().length; }
+};
+
 let currentName = '';
 
 // 인증서 정적 텍스트 주입
@@ -508,7 +642,10 @@ function generateCert() {
 
 function goBack() {
   document.getElementById('screen-cert').style.display = 'none';
-  document.getElementById('screen-input').style.display = 'block';
+  document.getElementById('screen-input').style.display = 'none';
+  renderStampScreen(null);
+  document.getElementById('screen-stamp').style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
 function downloadCert() {
@@ -571,6 +708,7 @@ function downloadCert() {
     a.download = `완주인증서_${currentName || '완주자'}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
+    STAMPS.clear();
     btn.textContent = '✓ 저장 완료!';
     btn.style.background = '#00883A';
     setTimeout(restoreAll, 2000);
@@ -579,6 +717,80 @@ function downloadCert() {
     alert('이미지 저장에 실패했습니다. 다시 시도해 주세요.');
     restoreAll();
   });
+}
+
+function renderStampScreen(newStamp) {
+  const collected = STAMPS.get();
+  const count = collected.length;
+
+  document.getElementById('stampProgress').textContent = count + ' / 3 스탬프 수집';
+
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('stamp-' + i);
+    if (collected.includes(i) && !el.classList.contains('stamped')) {
+      el.classList.add('stamped');
+      el.innerHTML = '<img src="assets/stamp.png" alt="스탬프">';
+      if (newStamp === i) {
+        el.classList.remove('pop');
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+    }
+  }
+
+  const hint = document.getElementById('stampHint');
+  const btn  = document.getElementById('btnGetCert');
+
+  if (count >= 3) {
+    hint.textContent = '모든 체크포인트 완료! 🎉';
+    btn.classList.add('active');
+  } else {
+    hint.textContent = '체크포인트 ' + (count + 1) + ' QR을 찍어주세요';
+    btn.classList.remove('active');
+  }
+}
+
+function processQRParam() {
+  const params = new URLSearchParams(window.location.search);
+  const cp     = parseInt(params.get('cp'));
+  const token  = params.get('token');
+
+  if (!cp || !token) return null;
+  if (STAMPS.tokens[cp] !== token) return null;
+
+  const collected = STAMPS.get();
+  if (collected.includes(cp)) return cp;
+
+  if (cp > 1 && !collected.includes(cp - 1)) return 'wrong-order';
+
+  STAMPS.add(cp);
+  return cp;
+}
+
+function goToNameInput() {
+  document.getElementById('screen-stamp').style.display = 'none';
+  document.getElementById('screen-input').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function initStampScreen() {
+  const result = processQRParam();
+
+  const msgEl = document.getElementById('stampMessage');
+  if (result === 'wrong-order') {
+    msgEl.textContent = '이전 체크포인트를 먼저 방문해주세요!';
+  } else if (typeof result === 'number') {
+    msgEl.textContent = '스탬프 ' + result + '번 완료! ✓';
+    setTimeout(function() { msgEl.textContent = ''; }, 3000);
+  }
+
+  renderStampScreen(typeof result === 'number' ? result : null);
+
+  if (window.history.replaceState) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  document.getElementById('screen-stamp').style.display = 'block';
 }
 
 document.getElementById('nameInput').addEventListener('keydown', e => {
@@ -640,6 +852,8 @@ function scaleCert() {
     cert.style.transform = '';
   }
 }
+document.getElementById('screen-input').style.display = 'none';
+initStampScreen();
 scaleCert();
 window.addEventListener('resize', scaleCert);
 </script>
