@@ -517,17 +517,43 @@ function downloadCert() {
   btn.textContent = '저장 중...';
   btn.disabled = true;
 
+  // 캡처 전 transform 해제
   const savedTransform = cert.style.transform;
-  const restore = () => {
+  cert.style.transform = '';
+
+  // cert 내 모든 요소의 inline 스타일 저장 후 강제 가시 상태로 고정
+  const allEls = Array.from(cert.querySelectorAll('*'));
+  const saved = allEls.map(el => ({
+    animation:      el.style.animation,
+    animationDelay: el.style.animationDelay,
+    opacity:        el.style.opacity,
+    transform:      el.style.transform,
+    visibility:     el.style.visibility
+  }));
+  allEls.forEach(el => {
+    el.style.animation      = 'none';
+    el.style.animationDelay = '0s';
+    el.style.opacity        = '1';
+    el.style.visibility     = 'visible';
+    if (el !== cert) el.style.transform = 'none';
+  });
+
+  const restoreAll = () => {
+    allEls.forEach((el, i) => {
+      el.style.animation      = saved[i].animation;
+      el.style.animationDelay = saved[i].animationDelay;
+      el.style.opacity        = saved[i].opacity;
+      el.style.visibility     = saved[i].visibility;
+      if (el !== cert) el.style.transform = saved[i].transform;
+    });
     cert.style.transform = savedTransform;
     btn.textContent = '이미지 저장 (1:1)';
     btn.disabled = false;
   };
 
-  // 캡처 전 transform 해제 → 600×600 원본 크기로 선명하게 캡처
-  cert.style.transform = '';
+  // 강제 reflow 후 캡처 (스타일 적용 보장)
+  void cert.offsetHeight;
 
-  // 이미지 디코딩 + 폰트 전부 완료 후 캡처
   const imgDecodes = Array.from(cert.querySelectorAll('img')).map(img =>
     img.decode ? img.decode().catch(() => {}) : Promise.resolve()
   );
@@ -536,9 +562,9 @@ function downloadCert() {
   Promise.all([document.fonts.ready, rafTick, ...imgDecodes])
   .then(() => html2canvas(cert, {
     scale: 2,
-    useCORS: false,
-    allowTaint: false,
-    backgroundColor: null,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ffffff',
     logging: false
   })).then(canvas => {
     const a = document.createElement('a');
@@ -547,11 +573,11 @@ function downloadCert() {
     a.click();
     btn.textContent = '✓ 저장 완료!';
     btn.style.background = '#00883A';
-    setTimeout(restore, 2000);
+    setTimeout(restoreAll, 2000);
   }).catch(err => {
     console.error('인증서 저장 실패:', err);
     alert('이미지 저장에 실패했습니다. 다시 시도해 주세요.');
-    restore();
+    restoreAll();
   });
 }
 
