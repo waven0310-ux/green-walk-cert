@@ -1,0 +1,13 @@
+# 로컬 도구
+.claude/
+.superpowers/
+.mcp.json
+
+# 로컬 작업 파일
+/4x/
+다운로드.png
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
